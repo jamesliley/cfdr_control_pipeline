@@ -1,0 +1,377 @@
+> ###########################################################################
+> ## Numerical FDR comparison between methods ###############################
+> ###########################################################################
+> 
+> # The output of this section of code is saved in ./outputs as a text file
+> #  ./outputs/FDR_comparison.txt.
+> 
+> suppressWarnings(rm(list=colnames(rx)))
+> attach(rx)
+> 
+> # Shorthands
+> fp=fdp_p; # FDP for p-values (BH procedure)
+> f1=fdp_cf1_fdr1_adj0_dist1; # FDP using method 1
+> f2=fdp_cf1_fdr2_adj0_dist1; # FDP using method 2
+> f3=fdp_cf1_fdr3_adj0_dist1; # FDP using method 3
+> f3b=fdp_cf1_fdr3b_adj0_dist1; # FDP using method 3b
+> f4=fdp_cf1_fdr4_adj0_dist1; # FDP using method 4
+> 
+> f3_1=fdp_cf1_fdr3_adj0_dist1_fold1; # FDP using method 3, fold 1
+> f3_2=fdp_cf1_fdr3_adj0_dist1_fold2; # FDP using method 3, fold 2
+> f3_3=fdp_cf1_fdr3_adj0_dist1_fold3; # FDP using method 3, fold 3
+> 
+> # We separately consider the cases n1p+ n1pq=0 and n1p+n1pq>0, since 
+> #  failure of FDR control tends to occur most severely at n1p+n1pq=0
+> xx=n1p+n1pq; 
+> x0=which(xx==0)
+> x1=which(xx>0)
+> 
+> alpha=0.1 # universal
+> 
+> 
+> # FDR control at n1p+n1pq=0. In this case, any rejection of the 
+> #  null constitutes a false discovery, so the FDP is either 0 or 1.
+> #  We thus use a one-tailed binomial test of proportion to see if 
+> #  the FDR exceeds alpha (0.1).
+> n=length(x0)
+> prop.test(sum(f1[x0]),n,alpha,alternative="greater") # controlled using method 1
+
+	1-sample proportions test with continuity correction
+
+data:  sum(f1[x0]) out of n, null probability alpha
+X-squared = 1.1568, df = 1, p-value = 0.8589
+alternative hypothesis: true p is greater than 0.1
+95 percent confidence interval:
+ 0.09140258 1.00000000
+sample estimates:
+         p 
+0.09650714 
+
+> prop.test(sum(f2[x0]),n,alpha,alternative="greater") # NOT controlled using method 2
+
+	1-sample proportions test with continuity correction
+
+data:  sum(f2[x0]) out of n, null probability alpha
+X-squared = 337.71, df = 1, p-value < 2.2e-16
+alternative hypothesis: true p is greater than 0.1
+95 percent confidence interval:
+ 0.1524137 1.0000000
+sample estimates:
+        p 
+0.1587662 
+
+> prop.test(sum(f3[x0]),n,alpha,alternative="greater") # NOT controlled using method 3
+
+	1-sample proportions test with continuity correction
+
+data:  sum(f3[x0]) out of n, null probability alpha
+X-squared = 2792.6, df = 1, p-value < 2.2e-16
+alternative hypothesis: true p is greater than 0.1
+95 percent confidence interval:
+ 0.2611311 1.0000000
+sample estimates:
+        p 
+0.2688818 
+
+> prop.test(sum(f3b[x0]),n,alpha,alternative="greater") # controlled using method 3b
+
+	1-sample proportions test with continuity correction
+
+data:  sum(f3b[x0]) out of n, null probability alpha
+X-squared = 0.0036415, df = 1, p-value = 0.4759
+alternative hypothesis: true p is greater than 0.1
+95 percent confidence interval:
+ 0.09505541 1.00000000
+sample estimates:
+        p 
+0.1002495 
+
+> prop.test(sum(f4[x0]),n,alpha,alternative="greater") # controlled using method 4
+
+	1-sample proportions test with continuity correction
+
+data:  sum(f4[x0]) out of n, null probability alpha
+X-squared = 0.42198, df = 1, p-value = 0.742
+alternative hypothesis: true p is greater than 0.1
+95 percent confidence interval:
+ 0.09273061 1.00000000
+sample estimates:
+       p 
+0.097868 
+
+> prop.test(sum(c(f3_1[x0],f3_2[x0],f3_3[x0])),
++           3*n,alpha,alternative="greater") # controlled within-fold using method 3a
+
+	1-sample proportions test with continuity correction
+
+data:  sum(c(f3_1[x0], f3_2[x0], f3_3[x0])) out of 3 * n, null probability alpha
+X-squared = 0.18347, df = 1, p-value = 0.6658
+alternative hypothesis: true p is greater than 0.1
+95 percent confidence interval:
+ 0.0961903 1.0000000
+sample estimates:
+         p 
+0.09919105 
+
+> 
+> # When used on f1,f2,f3,f3b,f4, this test has power 90% to detect a deviation of 9.5% at 0.05
+> #  significance:
+> POWER=0.9; P=0.05; n=length(x0); alpha=0.1
+> uniroot(function(x) qbinom(1-POWER,n,x)-qbinom(1-P,n,alpha),interval=c(0.05,0.5))$root / alpha # proportional change in alpha detectable
+[1] 1.094909
+> 
+> 
+> 
+> # FDR control at n1p+n1pq>0. FDP is roughly normal for large n1p+n1pq; we
+> #  use a one-sided t-test here. In general, the FDR is controlled at a 
+> #  level lower than alpha when n1p+n1pq>0 (see figures). 
+> t.test(f1[x1]-alpha,alternative="greater") # controlled using method 1
+
+	One Sample t-test
+
+data:  f1[x1] - alpha
+t = -20.745, df = 8833, p-value = 1
+alternative hypothesis: true mean is greater than 0
+95 percent confidence interval:
+ -0.0243005        Inf
+sample estimates:
+  mean of x 
+-0.02251515 
+
+> t.test(f2[x1]-alpha,alternative="greater") # NOT controlled using method 2
+
+	One Sample t-test
+
+data:  f2[x1] - alpha
+t = 4.0423, df = 8833, p-value = 2.669e-05
+alternative hypothesis: true mean is greater than 0
+95 percent confidence interval:
+ 0.003009683         Inf
+sample estimates:
+ mean of x 
+0.00507498 
+
+> t.test(f3[x1]-alpha,alternative="greater") # NOT controlled using method 3
+
+	One Sample t-test
+
+data:  f3[x1] - alpha
+t = 8.4564, df = 8833, p-value < 2.2e-16
+alternative hypothesis: true mean is greater than 0
+95 percent confidence interval:
+ 0.009773801         Inf
+sample estimates:
+ mean of x 
+0.01213429 
+
+> t.test(f3b[x1]-alpha,alternative="greater") # controlled using method 3b
+
+	One Sample t-test
+
+data:  f3b[x1] - alpha
+t = -7.2737, df = 8833, p-value = 1
+alternative hypothesis: true mean is greater than 0
+95 percent confidence interval:
+ -0.009884367          Inf
+sample estimates:
+   mean of x 
+-0.008061241 
+
+> t.test(f4[x1]-alpha,alternative="greater") # controlled using method 4
+
+	One Sample t-test
+
+data:  f4[x1] - alpha
+t = -7.1239, df = 8833, p-value = 1
+alternative hypothesis: true mean is greater than 0
+95 percent confidence interval:
+ -0.009694115          Inf
+sample estimates:
+  mean of x 
+-0.00787553 
+
+> t.test(c(f3_1[x0],f3_2[x0],f3_3[x0])-alpha,
++          alternative="greater") # controlled within-fold using method 3a
+
+	One Sample t-test
+
+data:  c(f3_1[x0], f3_2[x0], f3_3[x0]) - alpha
+t = -0.44016, df = 26453, p-value = 0.6701
+alternative hypothesis: true mean is greater than 0
+95 percent confidence interval:
+ -0.003832087          Inf
+sample estimates:
+    mean of x 
+-0.0008089514 
+
+> # When used on f1,f2,f3,f3b,f4, this test has power to detect a deviation of 11% at 0.05 significance:
+> POWER=0.9; P=0.05; n=length(x1); SD=sd(c(f1,f2,f3,f3b,f4)); alpha=0.1
+> (power.t.test(n=n,delta=NULL,sd=SD,sig=P,power=POWER,alt="one")$delta / alpha) + 1 # proportional change in alpha detectable
+[1] 1.115326
+> 
+> 
+> 
+> # FDR comparison to p-values with n1p+n1pq=0: the FDR of the B-H method at n1p+n1pq=0 is exactly alpha,
+> #  so we can use a two-sided binomial test of proportion. Method 3a cannot easily be compared in this
+> #  way within-fold as it uses a different sample size to the B-H method.
+> n=length(x0)
+> prop.test(sum(f1[x0]),n,alpha,alternative="two") # no difference using method 1
+
+	1-sample proportions test with continuity correction
+
+data:  sum(f1[x0]) out of n, null probability alpha
+X-squared = 1.1568, df = 1, p-value = 0.2821
+alternative hypothesis: true p is not equal to 0.1
+95 percent confidence interval:
+ 0.09046344 0.10290548
+sample estimates:
+         p 
+0.09650714 
+
+> prop.test(sum(f2[x0]),n,alpha,alternative="two") # FDR higher using method 2
+
+	1-sample proportions test with continuity correction
+
+data:  sum(f2[x0]) out of n, null probability alpha
+X-squared = 337.71, df = 1, p-value < 2.2e-16
+alternative hypothesis: true p is not equal to 0.1
+95 percent confidence interval:
+ 0.1512316 0.1666001
+sample estimates:
+        p 
+0.1587662 
+
+> prop.test(sum(f3[x0]),n,alpha,alternative="two") # FDR higher using method 3
+
+	1-sample proportions test with continuity correction
+
+data:  sum(f3[x0]) out of n, null probability alpha
+X-squared = 2792.6, df = 1, p-value < 2.2e-16
+alternative hypothesis: true p is not equal to 0.1
+95 percent confidence interval:
+ 0.2596737 0.2782925
+sample estimates:
+        p 
+0.2688818 
+
+> prop.test(sum(f3b[x0]),n,alpha,alternative="two") # no difference using method 3b
+
+	1-sample proportions test with continuity correction
+
+data:  sum(f3b[x0]) out of n, null probability alpha
+X-squared = 0.0036415, df = 1, p-value = 0.9519
+alternative hypothesis: true p is not equal to 0.1
+95 percent confidence interval:
+ 0.09409888 0.10675139
+sample estimates:
+        p 
+0.1002495 
+
+> prop.test(sum(f4[x0]),n,alpha,alternative="two") # no difference using method 4
+
+	1-sample proportions test with continuity correction
+
+data:  sum(f4[x0]) out of n, null probability alpha
+X-squared = 0.42198, df = 1, p-value = 0.516
+alternative hypothesis: true p is not equal to 0.1
+95 percent confidence interval:
+ 0.0917851 0.1043043
+sample estimates:
+       p 
+0.097868 
+
+> # When used on f1,f2,f3,f3b,f4, this test has power 90% to detect a deviation of 10.5% at 0.05
+> #  significance:
+> POWER=0.9; P=0.05; n=length(x0); alpha=0.1
+> uniroot(function(x) qbinom(1-POWER,n,x)-qbinom(1- P/2,n,alpha),interval=c(0.05,0.5))$root / alpha # proportional change in alpha detectable
+[1] 1.105202
+> 
+> 
+> 
+> 
+> 
+> # FDR comparison to p-values with n1p+n1pq>0. The FDR of the B-H method in
+> #  this case is generally <0.1, so we compare pairwise. We use a paired 
+> #  Wilcoxon rank sum test. The sign of the difference is given by the sign
+> #  of the pseudomedian; that is, if the pseudomedian of wilcox.test(x,y,...) 
+> #  is >0, then in general x>y.
+> wilcox.test(f1[x1],fp[x1],paired=T,conf.int=T) # FDP SMALLER using method 1 (ie overconservative)
+
+	Wilcoxon signed rank test with continuity correction
+
+data:  f1[x1] and fp[x1]
+V = 7424700, p-value < 2.2e-16
+alternative hypothesis: true location shift is not equal to 0
+95 percent confidence interval:
+ -0.01517429 -0.01312024
+sample estimates:
+(pseudo)median 
+   -0.01412667 
+
+> wilcox.test(f2[x1],fp[x1],paired=T,conf.int=T) # FDP larger using method 2 
+
+	Wilcoxon signed rank test with continuity correction
+
+data:  f2[x1] and fp[x1]
+V = 14816000, p-value < 2.2e-16
+alternative hypothesis: true location shift is not equal to 0
+95 percent confidence interval:
+ 0.005095486 0.006860594
+sample estimates:
+(pseudo)median 
+     0.0059512 
+
+> wilcox.test(f3[x1],fp[x1],paired=T,conf.int=T) # FDP larger using method 3
+
+	Wilcoxon signed rank test with continuity correction
+
+data:  f3[x1] and fp[x1]
+V = 15611000, p-value < 2.2e-16
+alternative hypothesis: true location shift is not equal to 0
+95 percent confidence interval:
+ 0.006247019 0.008088956
+sample estimates:
+(pseudo)median 
+   0.007155588 
+
+> wilcox.test(f3b[x1],fp[x1],paired=T,conf.int=T) # FDP equivalent using method 3b
+
+	Wilcoxon signed rank test with continuity correction
+
+data:  f3b[x1] and fp[x1]
+V = 11880000, p-value = 0.9023
+alternative hypothesis: true location shift is not equal to 0
+95 percent confidence interval:
+ -0.0008764479  0.0007391594
+sample estimates:
+(pseudo)median 
+ -6.356917e-05 
+
+> wilcox.test(f4[x1],fp[x1],paired=T,conf.int=T) # FDP equivalent using method 4
+
+	Wilcoxon signed rank test with continuity correction
+
+data:  f4[x1] and fp[x1]
+V = 11598000, p-value = 0.7949
+alternative hypothesis: true location shift is not equal to 0
+95 percent confidence interval:
+ -0.0008874951  0.0007096406
+sample estimates:
+(pseudo)median 
+  -9.33083e-05 
+
+> # It is difficult to sensibly calculate the power of a Wilcoxon test; however,
+> #  the test is powerful. Approximately 20% of FDPs are equal in each comparison. We show below
+> #  that we have approximately 90% power to detect a 3% difference in 
+> #  Pr(FDP(method) > FDP(P)) and Pr(FDP(method) < FDP(P))
+> delta=0.03 # P(FDP(method) > FDP(P)) - P(FDP(method) < FDP(P))
+> equal=0.2 # P(FDP(method)=FDP(P))
+> n=length(x1); np=0; ntrial=1000; P=0.05; set.seed(1)
+> for (i in 1:ntrial) {
++  s=sample(c(-1,0,1),n,prob=c((1-equal-delta)/2,equal,(1-equal+delta)/2),rep=T)
++  pw=wilcox.test(s,rep(0,n),paired=T)$p.value; if (pw< P) np=np+1
++ }
+> np/ntrial # power to detect difference
+[1] 0.879
+> 
+> 
