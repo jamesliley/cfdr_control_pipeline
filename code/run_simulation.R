@@ -11,7 +11,7 @@
 ###########################################################################
 
 # Assumes current working directory is folder containing file ./data, 
-#  ./code, ./output and ./simualations. An example output with seed=1 is 
+#  ./code, ./output and ./simulations. An example output with seed=1 is 
 #  shown in ./simulations.
 out_dir="./simulations/"
 
@@ -444,24 +444,23 @@ save_vec()
 
 
 
-
-
 ###########################################################################
-## Parametric cFDR, four-groups ###########################################
+## Parametric cFDR, KDE ###################################################
 ###########################################################################
 
 ## general
-vLf=vlx(p,q,pars,indices=sub,adj=F); 
-vLt=vlx(p,q,pars,indices=sub,adj=T); 
+vLf=vly(p,q,indices=sub,adj=F); 
+vLt=vly(p,q,indices=sub,adj=T); 
 
 iLf=il(vLf,pi0_null=pi0_null,sigma_null=sigma_null,dist=dist_null)
 iLt=il(vLt,pi0_null=pi0_null,sigma_null=sigma_null,dist=dist_null)
 
 
+
 ### FDR control method 1
 # No adjustment for Pr(H0|Q)
 hit_cf2_fdr1_adj0_dist1=({
-  cf=cfdrx(p,q,pars,adj=F); ccut=cf[sub]
+  cf=cfdry(p,q,adj=F); ccut=cf[sub]
   vM=rowMins(vLf$x[,which(vLf$y>0.1 & vLf$y<1)]) # largest rectangle contained in L
   vM=pmin(vM,iLf[,1])
   out=ccut*iLf[,1]/vM; out[which(iLf[,1]==0)]=0; out[which(iLf[,1]==1)]=1
@@ -472,7 +471,7 @@ hit_cf2_fdr1_adj0_dist1=({
 })
 
 hit_cf2_fdr1_adj0_dist2=({
-  cf=cfdrx(p,q,pars,adj=F); ccut=cf[sub]
+  cf=cfdry(p,q,adj=F); ccut=cf[sub]
   vM=rowMins(vLf$x[,which(vLf$y>0.1 & vLf$y<1)]) # largest rectangle contained in L
   vM=pmin(vM,iLf[,2])
   out=ccut*iLf[,2]/vM; out[which(iLf[,2]==0)]=0; out[which(iLf[,2]==1)]=1
@@ -481,13 +480,12 @@ hit_cf2_fdr1_adj0_dist2=({
   if (any(out<alpha)) hit=which(rv <= max(rv[sub[which(out<alpha)]])) else hit=c()
   hit
 })
-save_vec()
 
 
 # Adjustment for Pr(H0|Q)
 hit_cf2_fdr1_adj1_dist1=({
-  cf=cfdrx(p,q,pars,adj=F); ccut=cf[sub]
-  vM=rowMins(vLt$x[,which(vLt$y>0.1 & vLt$y<1)])  # largest rectangle contained in L
+  cf=cfdry(p,q,adj=F); ccut=cf[sub]
+  vM=rowMins(vLt$x[,which(vLt$y>0.1 & vLt$y<1)]) # largest rectangle contained in L
   vM=pmin(vM,iLt[,1])
   out=ccut*iLt[,1]/vM; out[which(iLt[,1]==0)]=0; out[which(iLt[,1]==1)]=1
   
@@ -497,7 +495,7 @@ hit_cf2_fdr1_adj1_dist1=({
 })
 
 hit_cf2_fdr1_adj1_dist2=({
-  cf=cfdrx(p,q,pars,adj=F); ccut=cf[sub]
+  cf=cfdry(p,q,adj=F); ccut=cf[sub]
   vM=rowMins(vLt$x[,which(vLt$y>0.1 & vLt$y<1)]) # largest rectangle contained in L
   vM=pmin(vM,iLt[,2])
   out=ccut*iLt[,2]/vM; out[which(iLt[,2]==0)]=0; out[which(iLt[,2]==1)]=1
@@ -508,7 +506,6 @@ hit_cf2_fdr1_adj1_dist2=({
 })
 
 save_vec()
-
 
 
 ### FDR control method 2
@@ -527,7 +524,6 @@ hit_cf2_fdr2_adj0_dist2=({
   hit
 })
 
-save_vec()
 
 # Adjustment for Pr(H0|Q)
 hit_cf2_fdr2_adj1_dist1=({
@@ -547,12 +543,219 @@ hit_cf2_fdr2_adj1_dist2=({
 save_vec()
 
 
+### FDR control method 3
+# No adjustment for Pr(H0|Q)
+hit_cf2_fdr3_adj0_dist1 = ({
+  vv_all=c()
+  hit=c()
+  for (i in 1:nfold) {
+    inf=which(fold==i); outf=which(fold!=i)
+    lf=length(inf)
+    vl0=vly(p,q,mode=2,indices=inf,fold=inf,adj=F)
+    vv=il(vl0,pi0_null=pi0_null,sigma_null=sigma_null,dist=dist_null)
+    rv=rank(vv[,1])
+    out=vv[,1]*lf/rv
+    if (any(out<alpha)) hitx=inf[which(rv <= max(rv[which(out<alpha)]))] else hitx=c()    
+    assign(paste0("hit_cf2_fdr3_adj0_dist1_fold",i),hitx)
+    hit=c(hit,hitx)
+    vv_all[inf]=vv[,1] 
+  } 
+  rva=rank(vv_all); out_all=vv_all*length(p)/rva 
+  if (any(out_all<alpha)) hit_all=which(rva <= max(rva[which(out_all<alpha)])) else hit_all=c()
+  assign("hit_cf2_fdr3b_adj0_dist1",hit_all)
+  hit
+})
+
+hit_cf2_fdr3_adj0_dist2 = ({
+  vv_all=c()
+  hit=c()
+  for (i in 1:nfold) {
+    inf=which(fold==i); outf=which(fold!=i)
+    lf=length(inf)
+    vl0=vly(p,q,mode=2,indices=inf,fold=inf,adj=F)
+    vv=il(vl0,pi0_null=pi0_null,sigma_null=sigma_null,dist=dist_null)
+    rv=rank(vv[,2])
+    out=vv[,2]*lf/rv
+    if (any(out<alpha)) hitx=inf[which(rv <= max(rv[which(out<alpha)]))] else hitx=c()    
+    assign(paste0("hit_cf2_fdr3_adj0_dist2_fold",i),hitx)
+    hit=c(hit,hitx)
+    vv_all[inf]=vv[,2] 
+  } 
+  rva=rank(vv_all); out_all=vv_all*length(p)/rva 
+  if (any(out_all<alpha)) hit_all=which(rva <= max(rva[which(out_all<alpha)])) else hit_all=c() 
+  assign("hit_cf2_fdr3b_adj0_dist2",hit_all) 
+  hit
+})
+
+
+# Adjustment for Pr(H0|Q)
+hit_cf2_fdr3_adj1_dist1 = ({
+  vv_all=c()
+  hit=c()
+  for (i in 1:nfold) {
+    inf=which(fold==i); outf=which(fold!=i)
+    lf=length(inf)
+    vl0=vly(p,q,mode=2,indices=inf,fold=inf,adj=T)
+    vv=il(vl0,pi0_null=pi0_null,sigma_null=sigma_null,dist=dist_null)
+    rv=rank(vv[,1])
+    out=vv[,1]*lf/rv
+    if (any(out<alpha)) hitx=inf[which(rv <= max(rv[which(out<alpha)]))] else hitx=c()    
+    assign(paste0("hit_cf2_fdr3_adj1_dist1_fold",i),hitx)
+    hit=c(hit,hitx)
+    vv_all[inf]=vv[,1] 
+  } 
+  rva=rank(vv_all); out_all=vv_all*length(p)/rva 
+  if (any(out_all<alpha)) hit_all=which(rva <= max(rva[which(out_all<alpha)])) else hit_all=c() 
+  assign("hit_cf2_fdr3b_adj1_dist1",hit_all) 
+  hit
+})
+
+hit_cf2_fdr3_adj1_dist2 = ({
+  vv_all=c()
+  hit=c()
+  for (i in 1:nfold) {
+    inf=which(fold==i); outf=which(fold!=i)
+    lf=length(inf)
+    vl0=vly(p,q,mode=2,indices=inf,fold=inf,adj=T)
+    vv=il(vl0,pi0_null=pi0_null,sigma_null=sigma_null,dist=dist_null)
+    rv=rank(vv[,2])
+    out=vv[,2]*lf/rv
+    if (any(out<alpha)) hitx=inf[which(rv <= max(rv[which(out<alpha)]))] else hitx=c()    
+    assign(paste0("hit_cf2_fdr3_adj1_dist2_fold",i),hitx)
+    hit=c(hit,hitx)
+    vv_all[inf]=vv[,2] 
+  } 
+  rva=rank(vv_all); out_all=vv_all*length(p)/rva 
+  if (any(out_all<alpha)) hit_all=which(rva <= max(rva[which(out_all<alpha)])) else hit_all=c() 
+  assign("hit_cf2_fdr3b_adj1_dist2",hit_all) 
+  hit
+})
+
+save_vec()
+
+
+### FDR control method 4
+# Deprecated
+
+hit_cf2_fdr4_adj0_dist1=-1
+hit_cf2_fdr4_adj0_dist2=-1
+hit_cf2_fdr4_adj1_dist1=-1
+hit_cf2_fdr4_adj1_dist2=-1
+
+save_vec()
+
+
+
+
+
+
+###########################################################################
+## Parametric cFDR, four-groups ###########################################
+###########################################################################
+
+## general
+vLf=vlx(p,q,pars,indices=sub,adj=F); 
+vLt=vlx(p,q,pars,indices=sub,adj=T); 
+
+iLf=il(vLf,pi0_null=pi0_null,sigma_null=sigma_null,dist=dist_null)
+iLt=il(vLt,pi0_null=pi0_null,sigma_null=sigma_null,dist=dist_null)
+
+
+### FDR control method 1
+# No adjustment for Pr(H0|Q)
+hit_cf3_fdr1_adj0_dist1=({
+  cf=cfdrx(p,q,pars,adj=F); ccut=cf[sub]
+  vM=rowMins(vLf$x[,which(vLf$y>0.1 & vLf$y<1)]) # largest rectangle contained in L
+  vM=pmin(vM,iLf[,1])
+  out=ccut*iLf[,1]/vM; out[which(iLf[,1]==0)]=0; out[which(iLf[,1]==1)]=1
+  
+  vr=rep(1,length(p)); vr[sub]=iLf[,1]; rv=rank(vr)
+  if (any(out<alpha)) hit=which(rv <= max(rv[sub[which(out<alpha)]])) else hit=c()
+  hit
+})
+
+hit_cf3_fdr1_adj0_dist2=({
+  cf=cfdrx(p,q,pars,adj=F); ccut=cf[sub]
+  vM=rowMins(vLf$x[,which(vLf$y>0.1 & vLf$y<1)]) # largest rectangle contained in L
+  vM=pmin(vM,iLf[,2])
+  out=ccut*iLf[,2]/vM; out[which(iLf[,2]==0)]=0; out[which(iLf[,2]==1)]=1
+  
+  vr=rep(1,length(p)); vr[sub]=iLf[,2]; rv=rank(vr)
+  if (any(out<alpha)) hit=which(rv <= max(rv[sub[which(out<alpha)]])) else hit=c()
+  hit
+})
+save_vec()
+
+
+# Adjustment for Pr(H0|Q)
+hit_cf3_fdr1_adj1_dist1=({
+  cf=cfdrx(p,q,pars,adj=F); ccut=cf[sub]
+  vM=rowMins(vLt$x[,which(vLt$y>0.1 & vLt$y<1)])  # largest rectangle contained in L
+  vM=pmin(vM,iLt[,1])
+  out=ccut*iLt[,1]/vM; out[which(iLt[,1]==0)]=0; out[which(iLt[,1]==1)]=1
+  
+  vr=rep(1,length(p)); vr[sub]=iLt[,1]; rv=rank(vr)
+  if (any(out<alpha)) hit=which(rv <= max(rv[sub[which(out<alpha)]])) else hit=c()
+  hit
+})
+
+hit_cf3_fdr1_adj1_dist2=({
+  cf=cfdrx(p,q,pars,adj=F); ccut=cf[sub]
+  vM=rowMins(vLt$x[,which(vLt$y>0.1 & vLt$y<1)]) # largest rectangle contained in L
+  vM=pmin(vM,iLt[,2])
+  out=ccut*iLt[,2]/vM; out[which(iLt[,2]==0)]=0; out[which(iLt[,2]==1)]=1
+  
+  vr=rep(1,length(p)); vr[sub]=iLt[,2]; rv=rank(vr)
+  if (any(out<alpha)) hit=which(rv <= max(rv[sub[which(out<alpha)]])) else hit=c()
+  hit
+})
+
+save_vec()
+
+
+
+### FDR control method 2
+# No adjustment for Pr(H0|Q)
+hit_cf3_fdr2_adj0_dist1=({
+ vr=rep(1,length(p)); vr[sub]=iLf[,1]; rv=rank(vr)
+  out=vr*length(vr)/rv
+  if (any(out<alpha)) hit=which(rv <= max(rv[which(out<alpha)])) else hit=c()
+  hit
+})
+
+hit_cf3_fdr2_adj0_dist2=({
+ vr=rep(1,length(p)); vr[sub]=iLf[,2]; rv=rank(vr)
+  out=vr*length(vr)/rv
+  if (any(out<alpha)) hit=which(rv <= max(rv[which(out<alpha)])) else hit=c()
+  hit
+})
+
+save_vec()
+
+# Adjustment for Pr(H0|Q)
+hit_cf3_fdr2_adj1_dist1=({
+ vr=rep(1,length(p)); vr[sub]=iLt[,1]; rv=rank(vr)
+  out=vr*length(vr)/rv
+  if (any(out<alpha)) hit=which(rv <= max(rv[which(out<alpha)])) else hit=c()
+  hit
+})
+
+hit_cf3_fdr2_adj1_dist2=({
+ vr=rep(1,length(p)); vr[sub]=iLt[,2]; rv=rank(vr)
+  out=vr*length(vr)/rv
+  if (any(out<alpha)) hit=which(rv <= max(rv[which(out<alpha)])) else hit=c()
+  hit
+})
+
+save_vec()
+
+
 
 
 ### FDR control method 3. 
 # No adjustment for Pr(H0|Q)
 parsx=matrix(0,nfold,7)
-hit_cf2_fdr3_adj0_dist1 = ({
+hit_cf3_fdr3_adj0_dist1 = ({
   vv_all=c()
   hit=c()
   for (i in 1:nfold) {
@@ -564,17 +767,17 @@ hit_cf2_fdr3_adj0_dist1 = ({
     rv=rank(vx[,1])
     out=vx[,1]*lf/rv
     if (any(out<alpha)) hitx=inf[which(rv <= max(rv[which(out<alpha)]))] else hitx=c()
-    assign(paste0("hit_cf2_fdr3_adj0_dist1_fold",i),hitx)
+    assign(paste0("hit_cf3_fdr3_adj0_dist1_fold",i),hitx)
     hit=c(hit,hitx)
     vv_all[inf]=vx[,1] 
   } 
   rva=rank(vv_all); out_all=vv_all*length(p)/rva 
   if (any(out_all<alpha)) hit_all=which(rva <= max(rva[which(out_all<alpha)])) else hit_all=c() 
-  assign("hit_cf2_fdr3b_adj0_dist1",hit_all) 
+  assign("hit_cf3_fdr3b_adj0_dist1",hit_all) 
   hit
 })
 
-hit_cf2_fdr3_adj0_dist2 = ({
+hit_cf3_fdr3_adj0_dist2 = ({
   vv_all=c()
   hit=c()
   for (i in 1:nfold) {
@@ -586,18 +789,18 @@ hit_cf2_fdr3_adj0_dist2 = ({
     rv=rank(vx[,2])
     out=vx[,2]*lf/rv
     if (any(out<alpha)) hitx=inf[which(rv <= max(rv[which(out<alpha)]))] else hitx=c()
-    assign(paste0("hit_cf2_fdr3_adj0_dist2_fold",i),hitx)
+    assign(paste0("hit_cf3_fdr3_adj0_dist2_fold",i),hitx)
     hit=c(hit,hitx)
     vv_all[inf]=vx[,2] 
   } 
   rva=rank(vv_all); out_all=vv_all*length(p)/rva 
   if (any(out_all<alpha)) hit_all=which(rva <= max(rva[which(out_all<alpha)])) else hit_all=c() 
-  assign("hit_cf2_fdr3b_adj0_dist2",hit_all) 
+  assign("hit_cf3_fdr3b_adj0_dist2",hit_all) 
   hit
 })
 
 # Adjustment for Pr(H0|Q)
-hit_cf2_fdr3_adj1_dist1 = ({
+hit_cf3_fdr3_adj1_dist1 = ({
   vv_all=c()
   hit=c()
   for (i in 1:nfold) {
@@ -609,17 +812,17 @@ hit_cf2_fdr3_adj1_dist1 = ({
     rv=rank(vx[,1])
     out=vx[,1]*lf/rv
     if (any(out<alpha)) hitx=inf[which(rv <= max(rv[which(out<alpha)]))] else hitx=c()
-    assign(paste0("hit_cf2_fdr3_adj1_dist1_fold",i),hitx)
+    assign(paste0("hit_cf3_fdr3_adj1_dist1_fold",i),hitx)
     hit=c(hit,hitx)
     vv_all[inf]=vx[,1] 
   } 
   rva=rank(vv_all); out_all=vv_all*length(p)/rva 
   if (any(out_all<alpha)) hit_all=which(rva <= max(rva[which(out_all<alpha)])) else hit_all=c()
-  assign("hit_cf2_fdr3b_adj1_dist1",hit_all) 
+  assign("hit_cf3_fdr3b_adj1_dist1",hit_all) 
   hit
 })
 
-hit_cf2_fdr3_adj1_dist2 = ({
+hit_cf3_fdr3_adj1_dist2 = ({
   vv_all=c()
   hit=c()
   for (i in 1:nfold) {
@@ -631,13 +834,13 @@ hit_cf2_fdr3_adj1_dist2 = ({
     rv=rank(vx[,2])
     out=vx[,2]*lf/rv
     if (any(out<alpha)) hitx=inf[which(rv <= max(rv[which(out<alpha)]))] else hitx=c()
-    assign(paste0("hit_cf2_fdr3_adj1_dist2_fold",i),hitx)
+    assign(paste0("hit_cf3_fdr3_adj1_dist2_fold",i),hitx)
     hit=c(hit,hitx)
     vv_all[inf]=vx[,2] 
   } 
   rva=rank(vv_all); out_all=vv_all*length(p)/rva 
   if (any(out_all<alpha)) hit_all=which(rva <= max(rva[which(out_all<alpha)])) else hit_all=c()
-  assign("hit_cf2_fdr3b_adj1_dist2",hit_all)
+  assign("hit_cf3_fdr3b_adj1_dist2",hit_all)
   hit
 })
 
@@ -645,7 +848,7 @@ hit_cf2_fdr3_adj1_dist2 = ({
 ### FDR control method 4. For method 2, this corresponds to method 3b applied to local FDR
 # Deprecated. Corresponds to LOCAL cfdr.
 
-hit_cf2_fdr4_adj0_dist1=({
+hit_cf3_fdr4_adj0_dist1=({
   vv_all=c()
   hit=c()
   for (i in 1:nfold) {
@@ -665,7 +868,7 @@ hit_cf2_fdr4_adj0_dist1=({
   hit_all
 })
 
-hit_cf2_fdr4_adj0_dist2=({
+hit_cf3_fdr4_adj0_dist2=({
   vv_all=c()
   hit=c()
   for (i in 1:nfold) {
@@ -687,208 +890,10 @@ hit_cf2_fdr4_adj0_dist2=({
 
 
 # following is deprecated
-hit_cf2_fdr4_adj1_dist1=-1
-hit_cf2_fdr4_adj1_dist2=-1
-
-
-
-###########################################################################
-## Parametric cFDR, KDE ###################################################
-###########################################################################
-
-## general
-vLf=vly(p,q,indices=sub,adj=F); 
-vLt=vly(p,q,indices=sub,adj=T); 
-
-iLf=il(vLf,pi0_null=pi0_null,sigma_null=sigma_null,dist=dist_null)
-iLt=il(vLt,pi0_null=pi0_null,sigma_null=sigma_null,dist=dist_null)
-
-
-
-### FDR control method 1
-# No adjustment for Pr(H0|Q)
-hit_cf3_fdr1_adj0_dist1=({
-  cf=cfdry(p,q,adj=F); ccut=cf[sub]
-  vM=rowMins(vLf$x[,which(vLf$y>0.1 & vLf$y<1)]) # largest rectangle contained in L
-  vM=pmin(vM,iLf[,1])
-  out=ccut*iLf[,1]/vM; out[which(iLf[,1]==0)]=0; out[which(iLf[,1]==1)]=1
-  
-  vr=rep(1,length(p)); vr[sub]=iLf[,1]; rv=rank(vr)
-  if (any(out<alpha)) hit=which(rv <= max(rv[sub[which(out<alpha)]])) else hit=c()
-  hit
-})
-
-hit_cf3_fdr1_adj0_dist2=({
-  cf=cfdry(p,q,adj=F); ccut=cf[sub]
-  vM=rowMins(vLf$x[,which(vLf$y>0.1 & vLf$y<1)]) # largest rectangle contained in L
-  vM=pmin(vM,iLf[,2])
-  out=ccut*iLf[,2]/vM; out[which(iLf[,2]==0)]=0; out[which(iLf[,2]==1)]=1
-  
-  vr=rep(1,length(p)); vr[sub]=iLf[,2]; rv=rank(vr)
-  if (any(out<alpha)) hit=which(rv <= max(rv[sub[which(out<alpha)]])) else hit=c()
-  hit
-})
-
-
-# Adjustment for Pr(H0|Q)
-hit_cf3_fdr1_adj1_dist1=({
-  cf=cfdry(p,q,adj=F); ccut=cf[sub]
-  vM=rowMins(vLt$x[,which(vLt$y>0.1 & vLt$y<1)]) # largest rectangle contained in L
-  vM=pmin(vM,iLt[,1])
-  out=ccut*iLt[,1]/vM; out[which(iLt[,1]==0)]=0; out[which(iLt[,1]==1)]=1
-  
-  vr=rep(1,length(p)); vr[sub]=iLt[,1]; rv=rank(vr)
-  if (any(out<alpha)) hit=which(rv <= max(rv[sub[which(out<alpha)]])) else hit=c()
-  hit
-})
-
-hit_cf3_fdr1_adj1_dist2=({
-  cf=cfdry(p,q,adj=F); ccut=cf[sub]
-  vM=rowMins(vLt$x[,which(vLt$y>0.1 & vLt$y<1)]) # largest rectangle contained in L
-  vM=pmin(vM,iLt[,2])
-  out=ccut*iLt[,2]/vM; out[which(iLt[,2]==0)]=0; out[which(iLt[,2]==1)]=1
-  
-  vr=rep(1,length(p)); vr[sub]=iLt[,2]; rv=rank(vr)
-  if (any(out<alpha)) hit=which(rv <= max(rv[sub[which(out<alpha)]])) else hit=c()
-  hit
-})
-
-save_vec()
-
-
-### FDR control method 2
-# No adjustment for Pr(H0|Q)
-hit_cf3_fdr2_adj0_dist1=({
- vr=rep(1,length(p)); vr[sub]=iLf[,1]; rv=rank(vr)
-  out=vr*length(vr)/rv
-  if (any(out<alpha)) hit=which(rv <= max(rv[which(out<alpha)])) else hit=c()
-  hit
-})
-
-hit_cf3_fdr2_adj0_dist2=({
- vr=rep(1,length(p)); vr[sub]=iLf[,2]; rv=rank(vr)
-  out=vr*length(vr)/rv
-  if (any(out<alpha)) hit=which(rv <= max(rv[which(out<alpha)])) else hit=c()
-  hit
-})
-
-
-# Adjustment for Pr(H0|Q)
-hit_cf3_fdr2_adj1_dist1=({
- vr=rep(1,length(p)); vr[sub]=iLt[,1]; rv=rank(vr)
-  out=vr*length(vr)/rv
-  if (any(out<alpha)) hit=which(rv <= max(rv[which(out<alpha)])) else hit=c()
-  hit
-})
-
-hit_cf3_fdr2_adj1_dist2=({
- vr=rep(1,length(p)); vr[sub]=iLt[,2]; rv=rank(vr)
-  out=vr*length(vr)/rv
-  if (any(out<alpha)) hit=which(rv <= max(rv[which(out<alpha)])) else hit=c()
-  hit
-})
-
-save_vec()
-
-
-### FDR control method 3
-# No adjustment for Pr(H0|Q)
-hit_cf3_fdr3_adj0_dist1 = ({
-  vv_all=c()
-  hit=c()
-  for (i in 1:nfold) {
-    inf=which(fold==i); outf=which(fold!=i)
-    lf=length(inf)
-    vl0=vly(p,q,mode=2,indices=inf,fold=inf,adj=F)
-    vv=il(vl0,pi0_null=pi0_null,sigma_null=sigma_null,dist=dist_null)
-    rv=rank(vv[,1])
-    out=vv[,1]*lf/rv
-    if (any(out<alpha)) hitx=inf[which(rv <= max(rv[which(out<alpha)]))] else hitx=c()    
-    assign(paste0("hit_cf3_fdr3_adj0_dist1_fold",i),hitx)
-    hit=c(hit,hitx)
-    vv_all[inf]=vv[,1] 
-  } 
-  rva=rank(vv_all); out_all=vv_all*length(p)/rva 
-  if (any(out_all<alpha)) hit_all=which(rva <= max(rva[which(out_all<alpha)])) else hit_all=c()
-  assign("hit_cf3_fdr3b_adj0_dist1",hit_all)
-  hit
-})
-
-hit_cf3_fdr3_adj0_dist2 = ({
-  vv_all=c()
-  hit=c()
-  for (i in 1:nfold) {
-    inf=which(fold==i); outf=which(fold!=i)
-    lf=length(inf)
-    vl0=vly(p,q,mode=2,indices=inf,fold=inf,adj=F)
-    vv=il(vl0,pi0_null=pi0_null,sigma_null=sigma_null,dist=dist_null)
-    rv=rank(vv[,2])
-    out=vv[,2]*lf/rv
-    if (any(out<alpha)) hitx=inf[which(rv <= max(rv[which(out<alpha)]))] else hitx=c()    
-    assign(paste0("hit_cf3_fdr3_adj0_dist2_fold",i),hitx)
-    hit=c(hit,hitx)
-    vv_all[inf]=vv[,2] 
-  } 
-  rva=rank(vv_all); out_all=vv_all*length(p)/rva 
-  if (any(out_all<alpha)) hit_all=which(rva <= max(rva[which(out_all<alpha)])) else hit_all=c() 
-  assign("hit_cf3_fdr3b_adj0_dist2",hit_all) 
-  hit
-})
-
-
-# Adjustment for Pr(H0|Q)
-hit_cf3_fdr3_adj1_dist1 = ({
-  vv_all=c()
-  hit=c()
-  for (i in 1:nfold) {
-    inf=which(fold==i); outf=which(fold!=i)
-    lf=length(inf)
-    vl0=vly(p,q,mode=2,indices=inf,fold=inf,adj=T)
-    vv=il(vl0,pi0_null=pi0_null,sigma_null=sigma_null,dist=dist_null)
-    rv=rank(vv[,1])
-    out=vv[,1]*lf/rv
-    if (any(out<alpha)) hitx=inf[which(rv <= max(rv[which(out<alpha)]))] else hitx=c()    
-    assign(paste0("hit_cf3_fdr3_adj1_dist1_fold",i),hitx)
-    hit=c(hit,hitx)
-    vv_all[inf]=vv[,1] 
-  } 
-  rva=rank(vv_all); out_all=vv_all*length(p)/rva 
-  if (any(out_all<alpha)) hit_all=which(rva <= max(rva[which(out_all<alpha)])) else hit_all=c() 
-  assign("hit_cf3_fdr3b_adj1_dist1",hit_all) 
-  hit
-})
-
-hit_cf3_fdr3_adj1_dist2 = ({
-  vv_all=c()
-  hit=c()
-  for (i in 1:nfold) {
-    inf=which(fold==i); outf=which(fold!=i)
-    lf=length(inf)
-    vl0=vly(p,q,mode=2,indices=inf,fold=inf,adj=T)
-    vv=il(vl0,pi0_null=pi0_null,sigma_null=sigma_null,dist=dist_null)
-    rv=rank(vv[,2])
-    out=vv[,2]*lf/rv
-    if (any(out<alpha)) hitx=inf[which(rv <= max(rv[which(out<alpha)]))] else hitx=c()    
-    assign(paste0("hit_cf3_fdr3_adj1_dist2_fold",i),hitx)
-    hit=c(hit,hitx)
-    vv_all[inf]=vv[,2] 
-  } 
-  rva=rank(vv_all); out_all=vv_all*length(p)/rva 
-  if (any(out_all<alpha)) hit_all=which(rva <= max(rva[which(out_all<alpha)])) else hit_all=c() 
-  assign("hit_cf3_fdr3b_adj1_dist2",hit_all) 
-  hit
-})
-
-save_vec()
-
-
-### FDR control method 4
-# Deprecated
-
-hit_cf3_fdr4_adj0_dist1=-1
-hit_cf3_fdr4_adj0_dist2=-1
 hit_cf3_fdr4_adj1_dist1=-1
 hit_cf3_fdr4_adj1_dist2=-1
 
 save_vec()
+
+
 
