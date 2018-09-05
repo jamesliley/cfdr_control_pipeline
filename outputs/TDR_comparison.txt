@@ -1,0 +1,125 @@
+> ###########################################################################
+> ## Numerical TDR comparison between methods ###############################
+> ###########################################################################
+> 
+> # The output of this section of code is saved in ./outputs as a text file
+> #  ./outputs/TDR_comparison.txt.
+> 
+> # Shorthands. We do not consider FDR controlling methods 2 or 3, since 
+> #  these failed to control FDR. We also do not consider the power of method
+> #  3 within-fold, as this will effectively be captured by considering the 
+> #  power of method 3b.
+> tp=tdr_p; # TDR for p-values (BH procedure)
+> t1=tdr_cf1_fdr1_adj0_dist1; # TDR using method 1
+> t3b=tdr_cf1_fdr3b_adj0_dist1; # TDR using method 3b
+> t4=tdr_cf1_fdr4_adj0_dist1; # TDR using method 4
+> 
+> # We only consider values with n1p+n1pq>0, since TDR is indeterminate if 
+> #  n1p+n1pq==0
+> x1=which(xx>0)
+> 
+> 
+> # TDR comparison between methods, using paired Wilcoxon rank sum tests.
+> #  The sign of the difference is given by the sign of the pseudomedian;
+> #  that is, if the pseudomedian of wilcox.test(x,y,...) is >0, then 
+> #  in general x>y.
+> wilcox.test(t1[x1],tp[x1],paired=T,conf.int=T) # Method 1 is more powerful than p-value
+
+	Wilcoxon signed rank test with continuity correction
+
+data:  t1[x1] and tp[x1]
+V = 35399000, p-value < 2.2e-16
+alternative hypothesis: true location shift is not equal to 0
+95 percent confidence interval:
+ 0.004368236 0.005342936
+sample estimates:
+(pseudo)median 
+   0.004843624 
+
+> wilcox.test(t3b[x1],tp[x1],paired=T,conf.int=T) # Method 3b is more powerful than p-value
+
+	Wilcoxon signed rank test with continuity correction
+
+data:  t3b[x1] and tp[x1]
+V = 46099000, p-value < 2.2e-16
+alternative hypothesis: true location shift is not equal to 0
+95 percent confidence interval:
+ 0.01352758 0.01438871
+sample estimates:
+(pseudo)median 
+    0.01394808 
+
+> wilcox.test(t4[x1],tp[x1],paired=T,conf.int=T) # Method 3b is more powerful than p-value
+
+	Wilcoxon signed rank test with continuity correction
+
+data:  t4[x1] and tp[x1]
+V = 45348000, p-value < 2.2e-16
+alternative hypothesis: true location shift is not equal to 0
+95 percent confidence interval:
+ 0.01369568 0.01450765
+sample estimates:
+(pseudo)median 
+    0.01410902 
+
+> 
+> wilcox.test(t4[x1],t1[x1],paired=T,conf.int=T) # Method 4 is more powerful than method 1
+
+	Wilcoxon signed rank test with continuity correction
+
+data:  t4[x1] and t1[x1]
+V = 32837000, p-value < 2.2e-16
+alternative hypothesis: true location shift is not equal to 0
+95 percent confidence interval:
+ 0.01114567 0.01173907
+sample estimates:
+(pseudo)median 
+    0.01141129 
+
+> wilcox.test(t3b[x1],t1[x1],paired=T,conf.int=T) # Method 3b is more powerful than method 1
+
+	Wilcoxon signed rank test with continuity correction
+
+data:  t3b[x1] and t1[x1]
+V = 34295000, p-value < 2.2e-16
+alternative hypothesis: true location shift is not equal to 0
+95 percent confidence interval:
+ 0.01070648 0.01134804
+sample estimates:
+(pseudo)median 
+    0.01105656 
+
+> 
+> wilcox.test(t4[x1],t3b[x1],paired=T,conf.int=T) # Methods 3b and 4 are similarly powerful.
+
+	Wilcoxon signed rank test with continuity correction
+
+data:  t4[x1] and t3b[x1]
+V = 7192600, p-value = 0.7888
+alternative hypothesis: true location shift is not equal to 0
+95 percent confidence interval:
+ -5.298655e-05  6.547438e-05
+sample estimates:
+(pseudo)median 
+  1.452626e-05 
+
+> 
+> 
+> 
+> # It is difficult to sensibly calculate the power of a Wilcoxon test; however,
+> #  the test is powerful. Approximately 63% of FDPs are equal in each comparison. We show below
+> #  that we have approximately 90% power to detect a 2% difference in 
+> #  P(FDP(method A) > FDP(method B)) and P(FDP(method A) < FDP(method B))
+> delta=0.02 # P(FDP(method A) > FDP(method B)) - P(FDP(method A) < FDP(method B))
+> equal=0.63 # P(FDP(method A)=FDP(method B))
+> n=length(x1); np=0; ntrial=1000; P=0.05; set.seed(1)
+> for (i in 1:ntrial) {
++  s=sample(c(-1,0,1),n,prob=c((1-equal-delta)/2,equal,(1-equal+delta)/2),rep=T)
++  pw=wilcox.test(s,rep(0,n),paired=T)$p.value; if (pw< P) np=np+1
++ }
+> np/ntrial # power to detect difference
+[1] 0.967
+> 
+> 
+> 
+> detach(rx)

@@ -1,5 +1,4 @@
-###########################################################################
-##                                                                       ##
+#############################################################################                                                                       ##
 ## Accurate error control in high dimensional association testing using  ##
 ##  conditional false discovery rates                                    ##
 ##                                                                       ##
@@ -156,7 +155,7 @@ vx2=vl(p,q,indices=sub,adj=F,mode=0,nv=25000);
 
 # Plot title
 ex=expression(atop(L[S](alpha[i]),alpha[i]==paste("min"[p >= p[i]],"{",{widehat(cFDR)} 
-                       [paste(S+"(p,q"[i],")-(p"[i],",q"[i],")")](p[i],q[i]),"}")))
+                       [paste(S+"(p,q"[i],")")](p[i],q[i]),"}")))
 
 plot(0,0,type="n",xlab="P",ylab="Q",xlim=c(0,xmin),ylim=c(0,1),main=ex,
      xaxs="i",yaxs="i")
@@ -202,7 +201,7 @@ if (save_pdf) pdf(paste0(output_dir,"Lplot_pcut_leaveout.pdf"),width=6,height=5)
 
 vx4=vl(p,q,indices=sub,adj=F,mode=1); 
 
-ex=expression(atop({L}[paste(S,"\\(p"[i],",q"[i],")")](alpha[i])
+ex=expression(atop({L}[paste("S-(p"[i],",q"[i],")")](alpha[i])
                           ,alpha[i]==paste("min"[p >= p[i]],"{",{widehat(cFDR)} 
                           [paste(S+"(p,q"[i],")-(p"[i],",q"[i],")")] 
                           (p[i],q[i]),"}"))) 
@@ -338,27 +337,27 @@ np/ntrial # power to detect difference
 
 
 ###########################################################################
-## Numerical T2R comparison between methods ###############################
+## Numerical TDR comparison between methods ###############################
 ###########################################################################
 
 # The output of this section of code is saved in ./outputs as a text file
-#  ./outputs/T2R_comparison.txt.
+#  ./outputs/TDR_comparison.txt.
 
 # Shorthands. We do not consider FDR controlling methods 2 or 3, since 
 #  these failed to control FDR. We also do not consider the power of method
 #  3 within-fold, as this will effectively be captured by considering the 
 #  power of method 3b.
-tp=t2r_p; # T2R for p-values (BH procedure)
-t1=t2r_cf1_fdr1_adj0_dist1; # T2R using method 1
-t3b=t2r_cf1_fdr3b_adj0_dist1; # T2R using method 3b
-t4=t2r_cf1_fdr4_adj0_dist1; # T2R using method 4
+tp=tdr_p; # TDR for p-values (BH procedure)
+t1=tdr_cf1_fdr1_adj0_dist1; # TDR using method 1
+t3b=tdr_cf1_fdr3b_adj0_dist1; # TDR using method 3b
+t4=tdr_cf1_fdr4_adj0_dist1; # TDR using method 4
 
-# We only consider values with n1p+n1pq>0, since T2R is indeterminate if 
+# We only consider values with n1p+n1pq>0, since TDR is indeterminate if 
 #  n1p+n1pq==0
 x1=which(xx>0)
 
 
-# T2R comparison between methods, using paired Wilcoxon rank sum tests.
+# TDR comparison between methods, using paired Wilcoxon rank sum tests.
 #  The sign of the difference is given by the sign of the pseudomedian;
 #  that is, if the pseudomedian of wilcox.test(x,y,...) is >0, then 
 #  in general x>y.
@@ -513,14 +512,14 @@ attach(rx)
 if (save_pdf) pdf(paste0(output_dir,"fdp_control.pdf"),width=6,height=6)
 
 normalise=T # set to F to show absolute power rather than relative to fp
-txp=t2r_p
-tx1=t2r_cf1_fdr1_adj0_dist1
-tx3b=t2r_cf1_fdr3b_adj0_dist1
-tx4=t2r_cf1_fdr4_adj0_dist1
+txp=tdr_p
+tx1=tdr_cf1_fdr1_adj0_dist1
+tx3b=tdr_cf1_fdr3b_adj0_dist1
+tx4=tdr_cf1_fdr4_adj0_dist1
 xx=n1p+n1pq
 
 w=which(pmin(txp,tx1,tx3b,tx4)> -0.5 & # remove simulations which failed to finish in time
-          xx>0 & # t2r is indeterminate if xx==0
+          xx>0 & # tdr is indeterminate if xx==0
           !(N %in% c(1000,10000))) # use simulations where variables are sampled from 'continuous' distributions
 txp=txp[w]; tx1=tx1[w]; tx3b=tx3b[w]; tx4=tx4[w]; xx=xx[w]
 
@@ -548,7 +547,7 @@ if (normalise) {
 }
 
 prange=range(c(fp,f1,f3b,f4))
-if (normalise) yx=expression(paste(Delta,"T2R")) else yx="T2R"
+if (normalise) yx=expression(paste(Delta,"(power)")) else yx="Power"
 plot(0,type="n",xlim=range(xx),ylim=prange,xlab=expression(paste(n[1]^p, "+ n"[1]^{pq})),ylab=yx,bty="n")
 
 lines(sort(xf),fp[order(xf)],col="black",lty=1,lwd=mwd)

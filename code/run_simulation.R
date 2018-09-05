@@ -145,7 +145,7 @@ vars=gsub("fdr5","fdr3b",vars)
 save_vec=function() {
 
 fdp_vec=c()
-t2r_vec=c()
+tdr_vec=c()
 
 for (i in 1:length(vars)) {
   if (exists(vars[i])) {
@@ -160,11 +160,11 @@ for (i in 1:length(vars)) {
    fdp_vec=c(fdp_vec,fdp)
    
    # type-2 error rate
-   t2r=length(intersect(hitx,h1a))/length(h1a)
-   t2r_vec=c(t2r_vec,t2r)
+   tdr=length(intersect(hitx,h1a))/length(h1a)
+   tdr_vec=c(tdr_vec,tdr)
   } else {
     fdp_vec=c(fdp_vec,-1)
-    t2r_vec=c(t2r_vec,-1)
+    tdr_vec=c(tdr_vec,-1)
   }
 }
 
@@ -172,9 +172,9 @@ state_vec=c(seed,alpha,nsnp,dist_null,n1p,n1q,n1pq,sp,sq,pars,conv,ff$pars)
 names(state_vec)=c("seed","alpha","N","dist1","dist2","n1p","n1q","n1pq","sp","sq",
                    paste0("fit_",c("pi0","pi1","pi2","tau1","tau2","s1","s2","conv")),"pi0_null","sigma_null")
 names(fdp_vec)=gsub("hit","fdp",vars)
-names(t2r_vec)=gsub("hit","t2r",vars)
+names(tdr_vec)=gsub("hit","tdr",vars)
 
-out=c(state_vec,fdp_vec,t2r_vec)
+out=c(state_vec,fdp_vec,tdr_vec)
 
 write(out,file=paste0(out_dir,"cfdrsim",seed,".txt"),ncol=length(out))
 }
