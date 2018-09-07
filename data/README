@@ -26,11 +26,13 @@ The objects in these files are summarised below.
 
 This file contains a single object called rx. This is a data
 frame with the following columns. Some columns are only 
-relevant to our second paper, 'New estimators for conditional
-false discovery rates improve power and smoothness', but their
-explanation is included here for completeness. Variables are 
-explained in the supplementary material, section 'Simulation 
-protocol'. Simulations are oversampled with n1p+n1pq=0.
+relevant to our second paper, 'Improved consistency in 
+estimates of conditional false discovery rates increases 
+power relative to both existing methods and parametric 
+estimators', but their explanation is included here for 
+completeness. Variables are explained in the supplementary 
+material, section 'Simulation protocol'. Simulations are 
+oversampled with n1p+n1pq=0.
 
 [1] seed: random seed used to generate the simulation. To 
   reproduce the results of a given run of the simulation, run

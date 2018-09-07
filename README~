@@ -26,10 +26,9 @@ In all processes involving random number generation, we set a
 random seed explicitly. For this reason, all results should match
 those in the text exactly.
 
-Simulations are shared with those for our second paper, 'Improved
-consistency in estimates of conditional false discovery rates 
-increases power relative to both existing methods and parametric
-estimators'. Some columns of the data matrix will appear 
+Simulations are shared with those for our second paper, 'New 
+estimators for conditional false discovery rates improve power 
+and smoothness'. Some columns of the data matrix will appear 
 redundant for this reason.
 
 In this guide, we will outline the subdirectories in this folder,
