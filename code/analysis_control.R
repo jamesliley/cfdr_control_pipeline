@@ -389,6 +389,7 @@ np/ntrial # power to detect difference
 
 detach(rx)
 
+
 ###########################################################################
 ## Plot of FDR-controlling methods 1-4 FDR comparison #####################
 ###########################################################################
@@ -419,7 +420,7 @@ for (i in 1:length(u)) {
     f3bx[i]=sum(f3b*wts); f4x[i]=sum(f4*wts); fpx[i]=sum(fp*wts)
 }
 
-if (save_pdf) pdf(paste0(output_dir,"fdp_m1234_ci.pdf"),width=6,height=6)
+if (save_pdf) pdf(paste0(output_dir,"fdp_m1234_noci.pdf"),width=6,height=6)
 
 plot(0,type="n",xlim=range(xx),ylim=c(0.05,0.25),xlab=expression(paste(n[1]^p, "+ n"[1]^{pq})),ylab="FDR",bty="n")
 
@@ -555,7 +556,7 @@ lines(sort(xf),f1[order(xf)],col="black",lty=2,lwd=mwd)
 lines(sort(xf),f3b[order(xf)],col="red",lty=3,lwd=mwd)
 lines(sort(xf),f4[order(xf)],col="blue",lty=4,lwd=mwd)
 
-legend("bottomright",
+legend(300,0.004,
        c("4", "3b","1", "BH"),lty=4:1,lwd=mwd,col=c("blue","red","black","black"),bg="white",bty="n")
 
 if (save_pdf) dev.off()
